@@ -58,6 +58,7 @@ class LinkedNotebookParser(NotebookParser):
 
         document.settings.record_dependencies.add(path)
         env.note_dependency(path)
+        env.metadata[env.docname]['nbsphinx-link-target'] = path
 
         try:
             include_file = io.FileInput(source_path=path, encoding='utf8')
