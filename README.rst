@@ -25,3 +25,6 @@ The .nblink file is a JSON file with the following structure::
     }
 
 Further keys might be added in the future.
+
+Note that the documentation of this project might serve as a
+further resource!
