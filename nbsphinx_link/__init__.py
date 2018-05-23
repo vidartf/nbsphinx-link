@@ -51,14 +51,17 @@ class LinkedNotebookParser(NotebookParser):
         env = document.settings.env
         source_dir = os.path.dirname(env.doc2path(env.docname))
 
-        path = link['path']
-        path = os.path.normpath(os.path.join(source_dir, path))
-        path = utils.relative_path(None, path)
+        abs_path = os.path.normpath(os.path.join(source_dir, link['path']))
+        path = utils.relative_path(None, abs_path)
         path = nodes.reprunicode(path)
 
         document.settings.record_dependencies.add(path)
         env.note_dependency(path)
-        env.metadata[env.docname]['nbsphinx-link-target'] = path
+
+        target_root = env.config.nbsphinx_link_target_root
+        target = utils.relative_path(target_root, abs_path)
+        target = nodes.reprunicode(target).replace(os.path.sep, '/')
+        env.metadata[env.docname]['nbsphinx-link-target'] = target
 
         try:
             include_file = io.FileInput(source_path=path, encoding='utf8')
@@ -84,5 +87,6 @@ def setup(app):
     """Initialize Sphinx extension."""
     app.setup_extension('nbsphinx')
     app.add_source_parser('.nblink', LinkedNotebookParser)
+    app.add_config_value('nbsphinx_link_target_root', None, rebuild='env')
 
     return {'version': __version__, 'parallel_read_safe': True}
