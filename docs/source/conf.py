@@ -39,6 +39,17 @@ version = '%i.%i' % version_ns['version_info'][:2]
 # The full version, including alpha/beta/rc tags.
 release = version_ns['__version__']
 
+import subprocess
+try:
+    git_rev = subprocess.check_output(['git', 'describe', '--exact-match', 'HEAD'], universal_newlines=True)
+except subprocess.CalledProcessError:
+    try:
+        git_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD'], universal_newlines=True)
+    except subprocess.CalledProcessError:
+        git_rev = ''
+if git_rev:
+    git_rev = git_rev.splitlines()[0] + '/'
+
 
 # -- General configuration ---------------------------------------------------
 
@@ -198,6 +209,6 @@ r"""
         This page was generated from `{{ docpath }}`__.
 
     __ https://github.com/vidartf/nbsphinx-link/blob/
-        {{ env.config.release }}/{{ docpath }}
-"""
+        """ +
+git_rev + r"{{ docpath }}"
 )
