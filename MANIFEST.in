@@ -1,2 +1,14 @@
 include LICENSE
 include *.rst
+include readthedocs.yml
+
+graft notebooks
+
+# Documentation
+graft docs
+exclude docs/\#*
+
+# docs subdirs we want to skip
+prune docs/build
+prune docs/gh-pages
+prune docs/dist
