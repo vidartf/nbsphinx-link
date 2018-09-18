@@ -86,7 +86,7 @@ class LinkedNotebookParser(NotebookParser):
 def setup(app):
     """Initialize Sphinx extension."""
     app.setup_extension('nbsphinx')
-    app.add_source_parser('.nblink', LinkedNotebookParser)
+    app.add_source_parser('.nblink', LinkedNotebookParser, override=True)
     app.add_config_value('nbsphinx_link_target_root', None, rebuild='env')
 
     return {'version': __version__, 'parallel_read_safe': True}
