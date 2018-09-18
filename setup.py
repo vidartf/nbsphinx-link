@@ -24,6 +24,7 @@ setup_args = dict(
     packages        = find_packages(here),
     author          = 'Vidar Tonaas Fauske',
     author_email    = 'vidartf@gmail.com',
+    url             = 'https://github.com/vidartf/nbsphinx-link',
     license         = 'BSD-3',
     platforms       = "Linux, Mac OS X, Windows",
     keywords        = ['Interactive', 'Interpreter', 'Shell', 'Web'],
