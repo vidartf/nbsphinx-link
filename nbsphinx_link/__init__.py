@@ -2,7 +2,7 @@
 
 Usage:
 - Install the package.
-- Add 'nbsphinx-link' to extensions in Sphinx config 'conf.py'
+- Add 'nbsphinx_link' to extensions in Sphinx config 'conf.py'
 - Add a file with the '.nblink' extension where you want them included.
 
 The .nblink file is a JSON file with the following structure:
