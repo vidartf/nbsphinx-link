@@ -40,6 +40,7 @@ setup_args = dict(
     ],
     install_requires = [
         'nbsphinx',
+        'sphinx>=1.8',
     ],
     entry_points = {
     }
