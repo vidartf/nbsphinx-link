@@ -20,7 +20,8 @@ import os
 
 from docutils import io, nodes, utils
 from docutils.utils.error_reporting import SafeString, ErrorString
-from nbsphinx import NotebookParser, NotebookError
+from nbsphinx import NotebookParser, NotebookError, _ipynbversion
+import nbformat
 
 from ._version import __version__
 
@@ -41,6 +42,9 @@ class LinkedNotebookParser(NotebookParser):
 
     Further keys might be added in the future.
     """
+
+    supported = 'linked_jupyter_notebook',
+
     def parse(self, inputstring, document):
         """Parse the nblink file.
 
@@ -62,6 +66,16 @@ class LinkedNotebookParser(NotebookParser):
         target = utils.relative_path(target_root, abs_path)
         target = nodes.reprunicode(target).replace(os.path.sep, '/')
         env.metadata[env.docname]['nbsphinx-link-target'] = target
+
+        # Copy parser from nbsphinx for our cutom format
+        try:
+            formats = env.config.nbsphinx_custom_formats
+        except AttributeError:
+            pass
+        else:
+            formats.setdefault(
+                '.nblink',
+                lambda s: nbformat.reads(s, as_version=_ipynbversion))
 
         try:
             include_file = io.FileInput(source_path=path, encoding='utf8')
@@ -86,7 +100,8 @@ class LinkedNotebookParser(NotebookParser):
 def setup(app):
     """Initialize Sphinx extension."""
     app.setup_extension('nbsphinx')
-    app.add_source_parser('.nblink', LinkedNotebookParser, override=True)
+    app.add_source_suffix('.nblink', 'linked_jupyter_notebook')
+    app.add_source_parser(LinkedNotebookParser)
     app.add_config_value('nbsphinx_link_target_root', None, rebuild='env')
 
     return {'version': __version__, 'parallel_read_safe': True}
