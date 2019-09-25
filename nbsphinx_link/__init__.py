@@ -79,10 +79,7 @@ def collect_extra_media(extra_media, source_file, nb_path):
         if os.path.isabs(extract_media_path):
             src_path = extract_media_path
         else:
-            extract_media_relpath = utils.relative_path(None, extract_media_path)
-            extract_media_relpath = nodes.reprunicode(extract_media_relpath).replace(
-                os.path.sep, '/'
-            )
+            extract_media_relpath = os.path.join(source_dir, extract_media_path)
             src_path = os.path.normpath(os.path.join(source_dir, extract_media_relpath))
         target_path = utils.relative_path(nb_path, src_path)
         target_path = os.path.normpath(os.path.join(source_dir, target_path))
