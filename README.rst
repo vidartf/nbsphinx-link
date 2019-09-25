@@ -24,6 +24,10 @@ The .nblink file is a JSON file with the following structure::
         "path": "relative/path/to/notebook"
     }
 
+Optionally the "extra-media" key can be added, if you notebook includes
+any media, i.e. images. The value can be an array or a string, with
+path/-s to the media file/-s or directory/-s.
+
 Further keys might be added in the future.
 
 Note that the documentation of this project might serve as a
