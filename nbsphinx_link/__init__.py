@@ -105,8 +105,7 @@ class LinkedNotebookParser(NotebookParser):
     The .nblink file is a JSON file with the following structure:
 
     {
-        "path": "relative/path/to/notebook",
-        "extra-media":
+        "path": "relative/path/to/notebook"
     }
 
     Optionally the "extra-media" key can be added, if you notebook includes
@@ -116,7 +115,7 @@ class LinkedNotebookParser(NotebookParser):
     Further keys might be added in the future.
     """
 
-    supported = ('linked_jupyter_notebook',)
+    supported = 'linked_jupyter_notebook',
 
     def parse(self, inputstring, document):
         """Parse the nblink file.
@@ -152,30 +151,25 @@ class LinkedNotebookParser(NotebookParser):
             pass
         else:
             formats.setdefault(
-                '.nblink', lambda s: nbformat.reads(s, as_version=_ipynbversion)
-            )
+                '.nblink',
+                lambda s: nbformat.reads(s, as_version=_ipynbversion))
 
         try:
-            include_file = io.FileInput(source_path=path, encoding="utf8")
+            include_file = io.FileInput(source_path=path, encoding='utf8')
         except UnicodeEncodeError as error:
-            raise NotebookError(
-                'Problems with linked notebook "%s" path:\n'
-                'Cannot encode input file path "%s" '
-                "(wrong locale?)." % (env.docname, SafeString(path))
-            )
+            raise NotebookError(u'Problems with linked notebook "%s" path:\n'
+                                'Cannot encode input file path "%s" '
+                                '(wrong locale?).' %
+                                (env.docname, SafeString(path)))
         except IOError as error:
-            raise NotebookError(
-                'Problems with linked notebook "%s" path:\n%s.'
-                % (env.docname, ErrorString(error))
-            )
+            raise NotebookError(u'Problems with linked notebook "%s" path:\n%s.' %
+                                (env.docname, ErrorString(error)))
 
         try:
             rawtext = include_file.read()
         except UnicodeError as error:
-            raise NotebookError(
-                'Problem with linked notebook "%s":\n%s'
-                % (env.docname, ErrorString(error))
-            )
+            raise NotebookError(u'Problem with linked notebook "%s":\n%s' %
+                                (env.docname, ErrorString(error)))
         return super(LinkedNotebookParser, self).parse(rawtext, document)
 
 
