@@ -140,3 +140,7 @@ $RECYCLE.BIN/
 
 # vscode config
 .vscode
+
+# collected media
+docs/source/python_logo.png
+docs/source/images/python_logo.png
