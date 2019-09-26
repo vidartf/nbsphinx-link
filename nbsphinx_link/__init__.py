@@ -49,7 +49,7 @@ def register_dependency(file_path, document):
     document.settings.env.note_dependency(file_path)
 
 
-def copy_file(src, dest):
+def copy_file(src, dest, document):
     """
     Copies a singe file from ``src`` to ``dest``.
 
@@ -59,10 +59,13 @@ def copy_file(src, dest):
         Path to the source file.
     dest : str
         Path to the destination file.
+    document: docutils.nodes.document
+        Parsed document instance.
     """
     logger = getLogger(__name__)
     try:
         shutil.copy(src, dest)
+        register_dependency(src, document)
     except (OSError) as e:
         logger.warning(
             "The the file {} couldn't be copied. "
@@ -91,11 +94,9 @@ def copy_and_register_files(src, dest, document):
                 src_path = os.path.abspath(os.path.join(root, filename))
                 if not os.path.exists(dest):
                     os.makedirs(dest)
-                copy_file(src_path, dest)
-                register_dependency(src_path, document)
+                copy_file(src_path, dest, document)
     else:
-        copy_file(src, dest)
-        register_dependency(src, document)
+        copy_file(src, dest, document)
 
 
 def collect_extra_media(extra_media, source_file, nb_path, document):
