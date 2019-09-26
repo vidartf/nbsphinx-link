@@ -19,14 +19,13 @@ which are paths to the media files or directories.
 Further keys might be added in the future.
 """
 
-import errno
 import json
 import os
 import shutil
 
 from docutils import io, nodes, utils
 from docutils.utils.error_reporting import SafeString, ErrorString
-from docutils.nodes import document
+import docutils  # noqa: F401
 from nbsphinx import NotebookParser, NotebookError, _ipynbversion
 import nbformat
 from sphinx.util.logging import getLogger
@@ -34,12 +33,48 @@ from sphinx.util.logging import getLogger
 from ._version import __version__
 
 
-def copy_directory(src, dest):
+def register_dependency(file_path, document):
     """
-    Copies a directory or file from the path ``src`` to ``dest``.
-    Originally from: https://www.pythoncentral.io/how-to-recursively-copy-a-directory-folder-in-python/
-    Which is licensed under the MIT License: https://opensource.org/licenses/MIT
+    Registers files as dependency, so sphinx rebuilds the docs
+    when they changed.
 
+    Parameters
+    ----------
+    file_path : str
+        [description]
+    document: docutils.nodes.document
+        Parsed document instance.
+    """
+    document.settings.record_dependencies.add(file_path)
+    document.settings.env.note_dependency(file_path)
+
+
+def copy_file(src, dest):
+    """
+    Copies a singe file from ``src`` to ``dest``.
+
+    Parameters
+    ----------
+    src : str
+        Path to the source file.
+    dest : str
+        Path to the destination file.
+    """
+    logger = getLogger(__name__)
+    try:
+        shutil.copy(src, dest)
+    except (OSError) as e:
+        logger.warning(
+            "The the file {} couldn't be copied. "
+            "Error:\n {}".format(src, e)
+        )
+
+
+def copy_and_register_files(src, dest, document):
+    """
+    Copies a directory or file from the path ``src`` to ``dest``
+    and registers all files as dependency,
+    so sphinx rebuilds the docs when they changed.
 
     Parameters
     ----------
@@ -47,25 +82,28 @@ def copy_directory(src, dest):
         Path to the source directory or file
     dest : str
         Path to the destination directory or file
+    document: docutils.nodes.document
+        Parsed document instance.
     """
-    try:
-        # ensure that files will be overwritten
-        shutil.rmtree(dest, ignore_errors=True)
-        shutil.copytree(src, dest)
-    except OSError as e:
-        # If the error was caused because the source wasn't a directory
-        if e.errno == errno.ENOTDIR:
-            shutil.copy(src, dest)
-        else:
-            print('Directory not copied. Error: {}'.format(e))
+    if os.path.isdir(src):
+        for root, _, filenames in os.walk(src):
+            for filename in filenames:
+                src_path = os.path.abspath(os.path.join(root, filename))
+                if not os.path.exists(dest):
+                    os.makedirs(dest)
+                copy_file(src_path, dest)
+                register_dependency(src_path, document)
+    else:
+        copy_file(src, dest)
+        register_dependency(src, document)
 
 
 def collect_extra_media(extra_media, source_file, nb_path, document):
     """
-    Collects extra media defined in the .nblink file, with the key 'extra-media'.
-    The extra media (i.e. images) need to be copied in order for nbsphinx to properly
-    render the notebooks, since nbsphinx assumes that the files are relative to
-    the .nblink.
+    Collects extra media defined in the .nblink file,  with the key
+    'extra-media'. The extra media (i.e. images) need to be copied
+    in order for nbsphinx to properly render the notebooks, since
+    nbsphinx assumes that the files are relative to the .nblink.
 
     Parameters
     ----------
@@ -75,36 +113,36 @@ def collect_extra_media(extra_media, source_file, nb_path, document):
         Path to the .nblink file.
     nb_path : str
         Path to the notebook defined in the .nblink file , with the key 'path'.
-    document: document
+    document: docutils.nodes.document
         Parsed document instance.
 
     """
     logger = getLogger(__name__)
     source_dir = os.path.dirname(source_file)
     if not isinstance(extra_media, list):
-         logger.warning(
-                'The "extra-media", defined in {} needs to be a list of paths. ' \
-                'The current value is:\n{}'.format(
-                    source_file, extra_media
-                )
-            )
+        logger.warning(
+            'The "extra-media", defined in {} needs to be a list of paths. '
+            'The current value is:\n{}'.format(source_file, extra_media)
+        )
     for extract_media_path in extra_media:
         if os.path.isabs(extract_media_path):
             src_path = extract_media_path
         else:
-            extract_media_relpath = os.path.join(source_dir, extract_media_path)
-            src_path = os.path.normpath(os.path.join(source_dir, extract_media_relpath))
+            extract_media_relpath = os.path.join(
+                source_dir, extract_media_path
+            )
+            src_path = os.path.normpath(
+                os.path.join(source_dir, extract_media_relpath)
+            )
 
-        document.settings.record_dependencies.add(src_path)
-        document.settings.env.note_dependency(src_path)
-
-        target_path = utils.relative_path(nb_path, src_path)
-        target_path = os.path.normpath(os.path.join(source_dir, target_path))
+        dest_path = utils.relative_path(nb_path, src_path)
+        dest_path = os.path.normpath(os.path.join(source_dir, dest_path))
         if os.path.exists(src_path):
-            copy_directory(src_path, target_path)
+            copy_and_register_files(src_path, dest_path, document)
         else:
             logger.warning(
-                'The path "{}", defined in {} "extra-media", isn\'t a valid path.'.format(
+                'The path "{}", defined in {} "extra-media", '
+                'isn\'t a valid path.'.format(
                     extract_media_path, source_file
                 )
             )
@@ -152,8 +190,7 @@ class LinkedNotebookParser(NotebookParser):
             source_file = env.doc2path(env.docname)
             collect_extra_media(extra_media, source_file, path, document)
 
-        document.settings.record_dependencies.add(path)
-        env.note_dependency(path)
+        register_dependency(path, document)
 
         target_root = env.config.nbsphinx_link_target_root
         target = utils.relative_path(target_root, abs_path)
