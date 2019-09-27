@@ -137,3 +137,10 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# vscode config
+.vscode
+
+# collected media
+docs/source/smile.png
+docs/source/images
