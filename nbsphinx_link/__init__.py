@@ -58,7 +58,7 @@ def copy_file(src, dest, document):
     src : str
         Path to the source file.
     dest : str
-        Path to the destination file.
+        Path to the destination file or directory.
     document: docutils.nodes.document
         Parsed document instance.
     """
