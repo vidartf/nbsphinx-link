@@ -89,9 +89,10 @@ def copy_and_register_files(src, dest, document):
         Parsed document instance.
     """
     if os.path.isdir(src):
-        if not os.path.exists(dest):
-            os.makedirs(dest)
         for root, _, filenames in os.walk(src):
+            dst_root = os.path.join(dest, os.path.relpath(root, src))
+            if filenames and not os.path.exists(dst_root):
+                os.makedirs(dst_root)
             for filename in filenames:
                 src_path = os.path.abspath(os.path.join(root, filename))
                 copy_file(src_path, dest, document)
