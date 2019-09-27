@@ -110,7 +110,7 @@ def collect_extra_media(extra_media, source_file, nb_path, document):
     Parameters
     ----------
     extra_media : list
-        Path/-s to directorie-/s and/or file-/s with extra media.
+        Paths to directories and/or files with extra media.
     source_file : str
         Path to the .nblink file.
     nb_path : str
@@ -119,6 +119,7 @@ def collect_extra_media(extra_media, source_file, nb_path, document):
         Parsed document instance.
 
     """
+    any_dirs = False
     logger = getLogger(__name__)
     source_dir = os.path.dirname(source_file)
     if not isinstance(extra_media, list):
@@ -140,6 +141,9 @@ def collect_extra_media(extra_media, source_file, nb_path, document):
         dest_path = utils.relative_path(nb_path, src_path)
         dest_path = os.path.normpath(os.path.join(source_dir, dest_path))
         if os.path.exists(src_path):
+            if not any_dirs and os.path.isdir(src_path):
+                any_dirs = True
+                document.settings.env.note_reread()
             copy_and_register_files(src_path, dest_path, document)
         else:
             logger.warning(
@@ -191,7 +195,6 @@ class LinkedNotebookParser(NotebookParser):
         if extra_media:
             source_file = env.doc2path(env.docname)
             collect_extra_media(extra_media, source_file, path, document)
-            document.settings.env.note_reread()
 
         register_dependency(path, document)
 
