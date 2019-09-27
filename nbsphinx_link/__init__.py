@@ -33,7 +33,7 @@ from sphinx.util.logging import getLogger
 from ._version import __version__
 
 
-def register_dependency(file_path, document):
+def register_dependency(file_path, document, is_extra_media=False):
     """
     Registers files as dependency, so sphinx rebuilds the docs
     when they changed.
@@ -44,12 +44,17 @@ def register_dependency(file_path, document):
         [description]
     document: docutils.nodes.document
         Parsed document instance.
+    is_extra_media: bool
+        If True triggers docutils.nodes.document.env.note_reread
+        on file_path.
     """
     document.settings.record_dependencies.add(file_path)
     document.settings.env.note_dependency(file_path)
+    if is_extra_media:
+        document.settings.env.note_reread(file_path)
 
 
-def copy_file(src, dest, document):
+def copy_file(src, dest, document, is_extra_media=False):
     """
     Copies a singe file from ``src`` to ``dest``.
 
@@ -61,11 +66,14 @@ def copy_file(src, dest, document):
         Path to the destination file.
     document: docutils.nodes.document
         Parsed document instance.
+    is_extra_media: bool
+        If True triggers docutils.nodes.document.env.note_reread
+        on file_path.
     """
     logger = getLogger(__name__)
     try:
         shutil.copy(src, dest)
-        register_dependency(src, document)
+        register_dependency(src, document, is_extra_media=is_extra_media)
     except (OSError) as e:
         logger.warning(
             "The the file {} couldn't be copied. "
@@ -95,9 +103,9 @@ def copy_and_register_files(src, dest, document):
                 os.makedirs(dst_root)
             for filename in filenames:
                 src_path = os.path.abspath(os.path.join(root, filename))
-                copy_file(src_path, dest, document)
+                copy_file(src_path, dest, document, is_extra_media=True)
     else:
-        copy_file(src, dest, document)
+        copy_file(src, dest, document, is_extra_media=True)
 
 
 def collect_extra_media(extra_media, source_file, nb_path, document):
