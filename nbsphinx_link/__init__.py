@@ -141,9 +141,7 @@ def collect_extra_media(extra_media, source_file, nb_path, document):
         dest_path = utils.relative_path(nb_path, src_path)
         dest_path = os.path.normpath(os.path.join(source_dir, dest_path))
         if os.path.exists(src_path):
-            if not any_dirs and os.path.isdir(src_path):
-                any_dirs = True
-                document.settings.env.note_reread()
+            any_dirs = any_dirs or os.path.isdir(src_path)
             copy_and_register_files(src_path, dest_path, document)
         else:
             logger.warning(
@@ -152,6 +150,8 @@ def collect_extra_media(extra_media, source_file, nb_path, document):
                     extract_media_path, source_file
                 )
             )
+        if any_dirs:
+            document.settings.env.note_reread()
 
 
 class LinkedNotebookParser(NotebookParser):
