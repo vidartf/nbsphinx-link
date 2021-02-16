@@ -196,7 +196,7 @@ class LinkedNotebookParser(NotebookParser):
             source_file = env.doc2path(env.docname)
             collect_extra_media(extra_media, source_file, path, document)
 
-        register_dependency(path, document)
+        register_dependency(abs_path, document)
 
         target_root = env.config.nbsphinx_link_target_root
         target = utils.relative_path(target_root, abs_path)
