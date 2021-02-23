@@ -187,6 +187,13 @@ class LinkedNotebookParser(NotebookParser):
         env = document.settings.env
         source_dir = os.path.dirname(env.doc2path(env.docname))
 
+        if isinstance(link, list):
+            for entry in link:
+                self.__parser_helper(entry, source_dir, document, env)
+
+        else:
+            self.__parser_helper(link, source_dir, document, env)
+
     def __parser_helper(self, link, source_dir, document, env):
         """Helper method for adding a single notebook as a linked dependency.
 
