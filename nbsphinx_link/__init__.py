@@ -178,11 +178,7 @@ class LinkedNotebookParser(NotebookParser):
     supported = 'linked_jupyter_notebook',
 
     def parse(self, inputstring, document):
-        """Parse the nblink file.
-
-        Adds the linked file as a dependency, read the file, and
-        pass the content to the nbshpinx.NotebookParser.
-        """
+        """Parse the nblink file."""
         link = json.loads(inputstring)
         env = document.settings.env
         source_dir = os.path.dirname(env.doc2path(env.docname))
