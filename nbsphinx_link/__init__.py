@@ -187,11 +187,18 @@ class LinkedNotebookParser(NotebookParser):
         env = document.settings.env
         source_dir = os.path.dirname(env.doc2path(env.docname))
 
-        abs_path = os.path.normpath(os.path.join(source_dir, link['path']))
+    def __parser_helper(self, link, source_dir, document, env):
+        """Helper method for adding a single notebook as a linked dependency.
+
+        Adds the linked file as a dependency, read the file, and pass the content to
+        the nbshpinx.NotebookParser.
+        """
+
+        abs_path = os.path.normpath(os.path.join(source_dir, link["path"]))
         path = utils.relative_path(None, abs_path)
         path = nodes.reprunicode(path)
 
-        extra_media = link.get('extra-media', None)
+        extra_media = link.get("extra-media", None)
         if extra_media:
             source_file = env.doc2path(env.docname)
             collect_extra_media(extra_media, source_file, path, document)
@@ -200,8 +207,8 @@ class LinkedNotebookParser(NotebookParser):
 
         target_root = env.config.nbsphinx_link_target_root
         target = utils.relative_path(target_root, abs_path)
-        target = nodes.reprunicode(target).replace(os.path.sep, '/')
-        env.metadata[env.docname]['nbsphinx-link-target'] = target
+        target = nodes.reprunicode(target).replace(os.path.sep, "/")
+        env.metadata[env.docname]["nbsphinx-link-target"] = target
 
         # Copy parser from nbsphinx for our cutom format
         try:
@@ -210,26 +217,32 @@ class LinkedNotebookParser(NotebookParser):
             pass
         else:
             formats.setdefault(
-                '.nblink',
-                lambda s: nbformat.reads(s, as_version=_ipynbversion))
+                ".nblink", lambda s: nbformat.reads(s, as_version=_ipynbversion)
+            )
 
         try:
-            include_file = io.FileInput(source_path=path, encoding='utf8')
+            include_file = io.FileInput(source_path=path, encoding="utf8")
         except UnicodeEncodeError as error:
-            raise NotebookError(u'Problems with linked notebook "%s" path:\n'
-                                'Cannot encode input file path "%s" '
-                                '(wrong locale?).' %
-                                (env.docname, SafeString(path)))
+            raise NotebookError(
+                u'Problems with linked notebook "%s" path:\n'
+                'Cannot encode input file path "%s" '
+                "(wrong locale?)." % (env.docname, SafeString(path))
+            )
         except IOError as error:
-            raise NotebookError(u'Problems with linked notebook "%s" path:\n%s.' %
-                                (env.docname, ErrorString(error)))
+            raise NotebookError(
+                u'Problems with linked notebook "%s" path:\n%s.'
+                % (env.docname, ErrorString(error))
+            )
 
         try:
             rawtext = include_file.read()
         except UnicodeError as error:
-            raise NotebookError(u'Problem with linked notebook "%s":\n%s' %
-                                (env.docname, ErrorString(error)))
-        return super(LinkedNotebookParser, self).parse(rawtext, document)
+            raise NotebookError(
+                u'Problem with linked notebook "%s":\n%s'
+                % (env.docname, ErrorString(error))
+            )
+
+        super(LinkedNotebookParser, self).parse(rawtext, document)
 
 
 def setup(app):
