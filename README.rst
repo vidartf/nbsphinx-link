@@ -30,6 +30,17 @@ which are paths to the media files or directories to include. Note that
 this is not needed if the images are added as attachments to markdown
 cells.
 
+To include multiple multiple notebooks in a single .nblink file, use the following structure::
+
+    [
+        {
+            "path": "relative/path/to/notebook"
+        },
+        {
+            "path": "relative/path/to/notebook_2"
+        }
+    ]
+
 Further keys might be added in the future.
 
 Note that the documentation of this project might serve as a
