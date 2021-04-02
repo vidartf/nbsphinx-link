@@ -10,10 +10,10 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 
 # the name of the project
-name = 'nbsphinx-link'
+name = 'nbsphinx-multilink'
 
 version_ns = {}
-with io.open(os.path.join(here, 'nbsphinx_link', '_version.py'), encoding="utf8") as f:
+with io.open(os.path.join(here, 'nbsphinx_multilink', '_version.py'), encoding="utf8") as f:
     exec(f.read(), {}, version_ns)
 
 
@@ -24,7 +24,9 @@ setup_args = dict(
     packages        = find_packages(here),
     author          = 'Vidar Tonaas Fauske',
     author_email    = 'vidartf@gmail.com',
-    url             = 'https://github.com/vidartf/nbsphinx-link',
+    maintainer      = 'Austin Raney',
+    maintainer_email= 'aaraney@crimson.ua.edu',
+    url             = 'https://github.com/vidartf/nbsphinx-multilink',
     license         = 'BSD-3',
     platforms       = "Linux, Mac OS X, Windows",
     keywords        = ['Interactive', 'Interpreter', 'Shell', 'Web'],
@@ -37,6 +39,9 @@ setup_args = dict(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
     install_requires = [
         'nbsphinx',
