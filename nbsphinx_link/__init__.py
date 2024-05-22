@@ -29,7 +29,7 @@ import docutils  # noqa: F401
 from nbsphinx import NotebookParser, NotebookError, _ipynbversion
 import nbformat
 from sphinx.util.logging import getLogger
-import plateform
+import platform
 from ._version import __version__
 
 
