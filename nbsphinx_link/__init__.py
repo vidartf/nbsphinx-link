@@ -29,7 +29,6 @@ import docutils  # noqa: F401
 from nbsphinx import NotebookParser, NotebookError, _ipynbversion
 import nbformat
 from sphinx.util.logging import getLogger
-import platform
 from ._version import __version__
 
 
@@ -190,12 +189,6 @@ class LinkedNotebookParser(NotebookParser):
         abs_path = os.path.normpath(os.path.join(source_dir, link['path']))
         path = utils.relative_path(None, abs_path)
 
-        # Note: reprunicode is a compatibility hack for python 2. It has been removed 
-        # from docutils in v0.21.
-        is_py2 = int(platform.python_version()) == 2
-        if is_py2:
-            path = nodes.reprunicode(path)
-
         extra_media = link.get('extra-media', None)
         if extra_media:
             source_file = env.doc2path(env.docname)
@@ -204,10 +197,7 @@ class LinkedNotebookParser(NotebookParser):
         register_dependency(path, document)
 
         target_root = env.config.nbsphinx_link_target_root
-        target = utils.relative_path(target_root, abs_path)
-        if is_py2:
-            target = nodes.reprunicode(target)
-        target = target.replace(os.path.sep, '/')
+        target = utils.relative_path(target_root, abs_path).replace(os.path.sep, '/')
         env.metadata[env.docname]['nbsphinx-link-target'] = target
 
         # Copy parser from nbsphinx for our cutom format
