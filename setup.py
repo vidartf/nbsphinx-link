@@ -45,6 +45,12 @@ setup_args = dict(
         'nbsphinx',
         'sphinx>=1.8',
     ],
+    extras_require={
+        'docs': [
+            "sphinx_rtd_theme",
+            "ipython",
+        ]
+    },
     entry_points = {
     }
 )
