@@ -63,6 +63,7 @@ if git_rev:
 extensions = [
     'nbsphinx',
     'nbsphinx_link',
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -90,7 +91,9 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'default'
+
+language = "en"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -101,9 +104,10 @@ pygments_style = 'sphinx'
 # docs.readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
+html_theme = 'sphinx_rtd_theme'
+
 if not on_rtd:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # otherwise, readthedocs.org uses their theme by default, so no need to specify it
