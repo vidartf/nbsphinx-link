@@ -29,7 +29,6 @@ import docutils  # noqa: F401
 from nbsphinx import NotebookParser, NotebookError, _ipynbversion
 import nbformat
 from sphinx.util.logging import getLogger
-
 from ._version import __version__
 
 
@@ -189,7 +188,6 @@ class LinkedNotebookParser(NotebookParser):
 
         abs_path = os.path.normpath(os.path.join(source_dir, link['path']))
         path = utils.relative_path(None, abs_path)
-        path = nodes.reprunicode(path)
 
         extra_media = link.get('extra-media', None)
         if extra_media:
@@ -199,8 +197,7 @@ class LinkedNotebookParser(NotebookParser):
         register_dependency(path, document)
 
         target_root = env.config.nbsphinx_link_target_root
-        target = utils.relative_path(target_root, abs_path)
-        target = nodes.reprunicode(target).replace(os.path.sep, '/')
+        target = utils.relative_path(target_root, abs_path).replace(os.path.sep, '/')
         env.metadata[env.docname]['nbsphinx-link-target'] = target
 
         # Copy parser from nbsphinx for our cutom format
