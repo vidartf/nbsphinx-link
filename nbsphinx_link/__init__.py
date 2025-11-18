@@ -22,25 +22,27 @@ Further keys might be added in the future.
 import json
 import os
 import shutil
+from pathlib import Path
 
-from docutils import io, nodes, utils
-from docutils.utils.error_reporting import SafeString, ErrorString
-import docutils  # noqa: F401
-from nbsphinx import NotebookParser, NotebookError, _ipynbversion
 import nbformat
+from docutils import io, utils
+from docutils.nodes import document as ddocument
+from docutils.utils.error_reporting import ErrorString, SafeString
+from nbsphinx import NotebookError, NotebookParser, _ipynbversion
 from sphinx.util.logging import getLogger
+
 from ._version import __version__
 
 
-def register_dependency(file_path, document):
+def register_dependency(file_path: Path, document: ddocument):
     """
     Registers files as dependency, so sphinx rebuilds the docs
     when they changed.
 
     Parameters
     ----------
-    file_path : str
-        [description]
+    file_path : Path
+        the Path to register for updates
     document: docutils.nodes.document
         Parsed document instance.
     """
@@ -66,10 +68,7 @@ def copy_file(src, dest, document):
         shutil.copy(src, dest)
         register_dependency(src, document)
     except (OSError) as e:
-        logger.warning(
-            "The the file {} couldn't be copied. "
-            "Error:\n {}".format(src, e)
-        )
+        logger.warning("The the file %s couldn't be copied. Error:\n %s", src, e)
 
 
 def copy_and_register_files(src, dest, document):
@@ -176,7 +175,7 @@ class LinkedNotebookParser(NotebookParser):
 
     supported = 'linked_jupyter_notebook',
 
-    def parse(self, inputstring, document):
+    def parse(self, inputstring: str, document: ddocument) -> None:
         """Parse the nblink file.
 
         Adds the linked file as a dependency, read the file, and
@@ -187,18 +186,17 @@ class LinkedNotebookParser(NotebookParser):
         source_file = Path(env.docname)
         source_dir = source_file.parent
 
-        abs_path = os.path.normpath(os.path.join(source_dir, link['path']))
-        path = utils.relative_path(None, abs_path)
+        abs_path = (source_dir / link['path']).resolve()
+        path = Path(utils.relative_path(None, abs_path))
 
         extra_media = link.get('extra-media', None)
         if extra_media:
-            source_file = env.doc2path(env.docname)
             collect_extra_media(extra_media, source_file, path, document)
 
         register_dependency(path, document)
 
-        target_root = env.config.nbsphinx_link_target_root
-        target = utils.relative_path(target_root, abs_path).replace(os.path.sep, '/')
+        target_root = Path(env.config.nbsphinx_link_target_root) or Path.cwd()
+        target = abs_path.relative_to(target_root.resolve(), walk_up=True)
         env.metadata[env.docname]['nbsphinx-link-target'] = target
 
         # Copy parser from nbsphinx for our cutom format
@@ -211,7 +209,7 @@ class LinkedNotebookParser(NotebookParser):
 
         try:
             include_file = io.FileInput(source_path=path, encoding='utf8')
-        except UnicodeEncodeError as error:
+        except UnicodeEncodeError:
             raise NotebookError(u'Problems with linked notebook "%s" path:\n'
                                 'Cannot encode input file path "%s" '
                                 '(wrong locale?).' %
