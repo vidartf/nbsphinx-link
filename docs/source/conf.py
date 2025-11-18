@@ -106,12 +106,6 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 html_theme = 'sphinx_rtd_theme'
 
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
-# otherwise, readthedocs.org uses their theme by default, so no need to specify it
-
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
@@ -196,7 +190,7 @@ r"""
 {% if env.metadata[env.docname]['nbsphinx-link-target'] %}
 {% set docpath = env.metadata[env.docname]['nbsphinx-link-target'] %}
 {% else %}
-{% set docpath = env.doc2path(env.docname, base='docs/source/') %}
+{% set docpath = env.doc2path(env.docname, base='docs/source/') | string %}
 {% endif %}
 
 .. only:: html
