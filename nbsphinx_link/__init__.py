@@ -186,7 +186,7 @@ class LinkedNotebookParser(NotebookParser):
         source_file = Path(env.docname)
         source_dir = source_file.parent
 
-        abs_path = (source_dir / link['path']).resolve()
+        abs_path = (env.srcdir / source_dir / link['path']).resolve()
         path = Path(utils.relative_path(None, abs_path))
 
         extra_media = link.get('extra-media', None)
