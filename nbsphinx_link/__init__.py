@@ -27,7 +27,6 @@ from pathlib import Path
 import nbformat
 from docutils import io, utils
 from docutils.nodes import document as ddocument
-from docutils.utils.error_reporting import ErrorString, SafeString
 from nbsphinx import NotebookError, NotebookParser, _ipynbversion
 from sphinx.util.logging import getLogger
 
@@ -210,20 +209,24 @@ class LinkedNotebookParser(NotebookParser):
         try:
             include_file = io.FileInput(source_path=path, encoding='utf8')
         except UnicodeEncodeError:
-            raise NotebookError(u'Problems with linked notebook "%s" path:\n'
-                                'Cannot encode input file path "%s" '
-                                '(wrong locale?).' %
-                                (env.docname, SafeString(path)))
-        except IOError as error:
-            raise NotebookError(u'Problems with linked notebook "%s" path:\n%s.' %
-                                (env.docname, ErrorString(error)))
+            raise NotebookError(
+                f'Problems with linked notebook "{env.docname}" path:\n'
+                f'Cannot encode input file path "{path}" '
+                "(wrong locale?)."
+            )
+        except OSError as error:
+            
+            raise NotebookError(
+                f'Problems with linked notebook "{env.docname}" path:\n{io.error_string(error)}.'
+            )
 
         try:
             rawtext = include_file.read()
         except UnicodeError as error:
-            raise NotebookError(u'Problem with linked notebook "%s":\n%s' %
-                                (env.docname, ErrorString(error)))
-        return super(LinkedNotebookParser, self).parse(rawtext, document)
+            raise NotebookError(
+                f'Problem with linked notebook "{env.docname}":\n{io.error_string(error)}'
+            )
+        return super().parse(rawtext, document)
 
 
 def setup(app):
