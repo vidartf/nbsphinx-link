@@ -108,44 +108,41 @@ def collect_extra_media(extra_media, source_file, nb_path, document):
     ----------
     extra_media : list
         Paths to directories and/or files with extra media.
-    source_file : str
-        Path to the .nblink file.
-    nb_path : str
-        Path to the notebook defined in the .nblink file , with the key 'path'.
+    source_file : Path
+        Absolute path to the .nblink file.
+    nb_path : Path
+        Absolute path to the notebook defined in the .nblink file,
+        with the key 'path'.
     document: docutils.nodes.document
         Parsed document instance.
 
     """
     any_dirs = False
     logger = getLogger(__name__)
-    source_dir = os.path.dirname(source_file)
+    source_file = Path(source_file)
+    nb_path = Path(nb_path)
+    source_dir = source_file.parent
     if not isinstance(extra_media, list):
         logger.warning(
-            'The "extra-media", defined in {} needs to be a list of paths. '
-            'The current value is:\n{}'.format(source_file, extra_media)
+            'The "extra-media", defined in %s needs to be a list of paths. '
+            'The current value is:\n%s', source_file, extra_media
         )
     for extract_media_path in extra_media:
-        if os.path.isabs(extract_media_path):
+        extract_media_path = Path(extract_media_path)
+        if extract_media_path.is_absolute():
             src_path = extract_media_path
         else:
-            extract_media_relpath = os.path.join(
-                source_dir, extract_media_path
-            )
-            src_path = os.path.normpath(
-                os.path.join(source_dir, extract_media_relpath)
-            )
+            src_path = (source_dir / extract_media_path).resolve()
 
-        dest_path = utils.relative_path(nb_path, src_path)
-        dest_path = os.path.normpath(os.path.join(source_dir, dest_path))
-        if os.path.exists(src_path):
-            any_dirs = any_dirs or os.path.isdir(src_path)
-            copy_and_register_files(src_path, dest_path, document)
+        rel_to_nb = Path(utils.relative_path(str(nb_path), str(src_path)))
+        dest_path = (source_dir / rel_to_nb).resolve()
+        if src_path.exists():
+            any_dirs = any_dirs or src_path.is_dir()
+            copy_and_register_files(str(src_path), str(dest_path), document)
         else:
             logger.warning(
-                'The path "{}", defined in {} "extra-media", '
-                'isn\'t a valid path.'.format(
-                    extract_media_path, source_file
-                )
+                'The path "%s", defined in %s "extra-media", '
+                'isn\'t a valid path.', extract_media_path, source_file
             )
         if any_dirs:
             document.settings.env.note_reread()
@@ -182,11 +179,10 @@ class LinkedNotebookParser(NotebookParser):
         """
         link = json.loads(inputstring)
         env = document.settings.env
-        source_file = Path(env.docname)
+        source_file = Path(env.doc2path(env.docname)).resolve()
         source_dir = source_file.parent
 
-        abs_path = (env.srcdir / source_dir / link['path']).resolve()
-        path = Path(utils.relative_path(None, abs_path))
+        path = (source_dir / link['path']).resolve()
 
         extra_media = link.get('extra-media', None)
         if extra_media:
@@ -194,8 +190,14 @@ class LinkedNotebookParser(NotebookParser):
 
         register_dependency(path, document)
 
-        target_root = Path(env.config.nbsphinx_link_target_root) or Path.cwd()
-        target = abs_path.relative_to(target_root.resolve(), walk_up=True)
+        target_root_setting = env.config.nbsphinx_link_target_root
+        if target_root_setting is None:
+            target_root = Path(env.srcdir)
+        else:
+            target_root = Path(target_root_setting)
+            if not target_root.is_absolute():
+                target_root = Path(env.srcdir) / target_root
+        target = path.relative_to(target_root.resolve(), walk_up=True)
         env.metadata[env.docname]['nbsphinx-link-target'] = target
 
         # Copy parser from nbsphinx for our cutom format
