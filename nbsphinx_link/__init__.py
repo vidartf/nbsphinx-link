@@ -188,7 +188,7 @@ class LinkedNotebookParser(NotebookParser):
         if extra_media:
             collect_extra_media(extra_media, source_file, path, document)
 
-        register_dependency(path, document)
+        register_dependency(abs_path, document)
 
         target_root_setting = env.config.nbsphinx_link_target_root
         if target_root_setting is None:
