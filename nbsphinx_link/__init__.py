@@ -22,25 +22,26 @@ Further keys might be added in the future.
 import json
 import os
 import shutil
+from pathlib import Path
 
-from docutils import io, nodes, utils
-from docutils.utils.error_reporting import SafeString, ErrorString
-import docutils  # noqa: F401
-from nbsphinx import NotebookParser, NotebookError, _ipynbversion
 import nbformat
+from docutils import io, utils
+from docutils.nodes import document as ddocument
+from nbsphinx import NotebookError, NotebookParser, _ipynbversion
 from sphinx.util.logging import getLogger
+
 from ._version import __version__
 
 
-def register_dependency(file_path, document):
+def register_dependency(file_path: Path, document: ddocument):
     """
     Registers files as dependency, so sphinx rebuilds the docs
     when they changed.
 
     Parameters
     ----------
-    file_path : str
-        [description]
+    file_path : Path
+        the Path to register for updates
     document: docutils.nodes.document
         Parsed document instance.
     """
@@ -66,10 +67,7 @@ def copy_file(src, dest, document):
         shutil.copy(src, dest)
         register_dependency(src, document)
     except (OSError) as e:
-        logger.warning(
-            "The the file {} couldn't be copied. "
-            "Error:\n {}".format(src, e)
-        )
+        logger.warning("The the file %s couldn't be copied. Error:\n %s", src, e)
 
 
 def copy_and_register_files(src, dest, document):
@@ -110,44 +108,41 @@ def collect_extra_media(extra_media, source_file, nb_path, document):
     ----------
     extra_media : list
         Paths to directories and/or files with extra media.
-    source_file : str
-        Path to the .nblink file.
-    nb_path : str
-        Path to the notebook defined in the .nblink file , with the key 'path'.
+    source_file : Path
+        Absolute path to the .nblink file.
+    nb_path : Path
+        Absolute path to the notebook defined in the .nblink file,
+        with the key 'path'.
     document: docutils.nodes.document
         Parsed document instance.
 
     """
     any_dirs = False
     logger = getLogger(__name__)
-    source_dir = os.path.dirname(source_file)
+    source_file = Path(source_file)
+    nb_path = Path(nb_path)
+    source_dir = source_file.parent
     if not isinstance(extra_media, list):
         logger.warning(
-            'The "extra-media", defined in {} needs to be a list of paths. '
-            'The current value is:\n{}'.format(source_file, extra_media)
+            'The "extra-media", defined in %s needs to be a list of paths. '
+            'The current value is:\n%s', source_file, extra_media
         )
     for extract_media_path in extra_media:
-        if os.path.isabs(extract_media_path):
+        extract_media_path = Path(extract_media_path)
+        if extract_media_path.is_absolute():
             src_path = extract_media_path
         else:
-            extract_media_relpath = os.path.join(
-                source_dir, extract_media_path
-            )
-            src_path = os.path.normpath(
-                os.path.join(source_dir, extract_media_relpath)
-            )
+            src_path = (source_dir / extract_media_path).resolve()
 
-        dest_path = utils.relative_path(nb_path, src_path)
-        dest_path = os.path.normpath(os.path.join(source_dir, dest_path))
-        if os.path.exists(src_path):
-            any_dirs = any_dirs or os.path.isdir(src_path)
-            copy_and_register_files(src_path, dest_path, document)
+        rel_to_nb = Path(utils.relative_path(str(nb_path), str(src_path)))
+        dest_path = (source_dir / rel_to_nb).resolve()
+        if src_path.exists():
+            any_dirs = any_dirs or src_path.is_dir()
+            copy_and_register_files(str(src_path), str(dest_path), document)
         else:
             logger.warning(
-                'The path "{}", defined in {} "extra-media", '
-                'isn\'t a valid path.'.format(
-                    extract_media_path, source_file
-                )
+                'The path "%s", defined in %s "extra-media", '
+                'isn\'t a valid path.', extract_media_path, source_file
             )
         if any_dirs:
             document.settings.env.note_reread()
@@ -176,7 +171,7 @@ class LinkedNotebookParser(NotebookParser):
 
     supported = 'linked_jupyter_notebook',
 
-    def parse(self, inputstring, document):
+    def parse(self, inputstring: str, document: ddocument) -> None:
         """Parse the nblink file.
 
         Adds the linked file as a dependency, read the file, and
@@ -184,20 +179,25 @@ class LinkedNotebookParser(NotebookParser):
         """
         link = json.loads(inputstring)
         env = document.settings.env
-        source_dir = os.path.dirname(env.doc2path(env.docname))
+        source_file = Path(env.doc2path(env.docname)).resolve()
+        source_dir = source_file.parent
 
-        abs_path = os.path.normpath(os.path.join(source_dir, link['path']))
-        path = utils.relative_path(None, abs_path)
+        path = (source_dir / link['path']).resolve()
 
         extra_media = link.get('extra-media', None)
         if extra_media:
-            source_file = env.doc2path(env.docname)
             collect_extra_media(extra_media, source_file, path, document)
 
         register_dependency(path, document)
 
-        target_root = env.config.nbsphinx_link_target_root
-        target = utils.relative_path(target_root, abs_path).replace(os.path.sep, '/')
+        target_root_setting = env.config.nbsphinx_link_target_root
+        if target_root_setting is None:
+            target_root = Path(env.srcdir)
+        else:
+            target_root = Path(target_root_setting)
+            if not target_root.is_absolute():
+                target_root = Path(env.srcdir) / target_root
+        target = path.relative_to(target_root.resolve(), walk_up=True)
         env.metadata[env.docname]['nbsphinx-link-target'] = target
 
         # Copy parser from nbsphinx for our cutom format
@@ -206,27 +206,29 @@ class LinkedNotebookParser(NotebookParser):
         except AttributeError:
             pass
         else:
-            formats.setdefault(
-                '.nblink',
-                lambda s: nbformat.reads(s, as_version=_ipynbversion))
+            formats.setdefault('.nblink', ['nbformat.reads', {'as_version': _ipynbversion}])
 
         try:
             include_file = io.FileInput(source_path=path, encoding='utf8')
-        except UnicodeEncodeError as error:
-            raise NotebookError(u'Problems with linked notebook "%s" path:\n'
-                                'Cannot encode input file path "%s" '
-                                '(wrong locale?).' %
-                                (env.docname, SafeString(path)))
-        except IOError as error:
-            raise NotebookError(u'Problems with linked notebook "%s" path:\n%s.' %
-                                (env.docname, ErrorString(error)))
+        except UnicodeEncodeError:
+            raise NotebookError(
+                f'Problems with linked notebook "{env.docname}" path:\n'
+                f'Cannot encode input file path "{path}" '
+                "(wrong locale?)."
+            )
+        except OSError as error:
+            
+            raise NotebookError(
+                f'Problems with linked notebook "{env.docname}" path:\n{io.error_string(error)}.'
+            )
 
         try:
             rawtext = include_file.read()
         except UnicodeError as error:
-            raise NotebookError(u'Problem with linked notebook "%s":\n%s' %
-                                (env.docname, ErrorString(error)))
-        return super(LinkedNotebookParser, self).parse(rawtext, document)
+            raise NotebookError(
+                f'Problem with linked notebook "{env.docname}":\n{io.error_string(error)}'
+            )
+        return super().parse(rawtext, document)
 
 
 def setup(app):
