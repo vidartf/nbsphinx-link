@@ -197,7 +197,7 @@ class LinkedNotebookParser(NotebookParser):
             target_root = Path(target_root_setting)
             if not target_root.is_absolute():
                 target_root = Path(env.srcdir) / target_root
-        target = path.relative_to(target_root.resolve(), walk_up=True)
+        target = Path(utils.relative_path(str(target_root.resolve()), str(path)))
         env.metadata[env.docname]['nbsphinx-link-target'] = target
 
         # Copy parser from nbsphinx for our cutom format
